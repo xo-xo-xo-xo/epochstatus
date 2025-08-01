@@ -1,5 +1,4 @@
-bash script to monitor the status of project epoch's auth servers. will notify when server comes up or goes down after being up.
-
+monitor's project epoch's auth and realm servers 
 
 # requirements
 
