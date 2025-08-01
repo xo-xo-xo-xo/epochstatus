@@ -1,59 +1,14 @@
 #!/bin/bash
 
-# ---------- config ----------
-SERVER="game.project-epoch.net"
-PORT=3724
-DELAY_SECONDS=5
-NOTIFICATION_ON_CHANGE=true
-NOTIFICATION_WHEN_DOWN=false
-SHOW_TEST_NOTIFICATION=true
 SOUND_FILE="/home/xo/sounds/alert.mp3"
-
-# ----------------------------
-
-show_notification() {
-    local title="$1"
-    local message="$2"
-    notify-send "$title" "$message" -t 5000
-    if [ -f "$SOUND_FILE" ]; then
-        paplay "$SOUND_FILE" > /dev/null 2>&1
-    fi
-}
-
-
-if [ "$SHOW_TEST_NOTIFICATION" = true ]; then
-    show_notification "Test Notification" "Notification test"
-fi
-
-
-last_status=""
+DELAY=5
 
 while true; do
-
-    nc -z -w 5 "$SERVER" "$PORT" > /dev/null 2>&1
-    if [ $? -eq 0 ]; then
-        status="alive"
-    else
-        status="fucked"
-    fi
-
+    auth_status=$(nc -z -w 5 game.project-epoch.net 3724 >/dev/null 2>&1 && echo "alive" || echo "fucked")
+    game_status=$(nc -z -w 5 198.244.179.121 8085 >/dev/null 2>&1 && echo "alive" || echo "fucked")
     timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    line="$timestamp $status"
-
-
-    echo "$line"
-   state_changed=false
-    if [ -n "$last_status" ] && [ "$status" != "$last_status" ]; then
-        state_changed=true
-    fi
-
-
-    if [ "$NOTIFICATION_ON_CHANGE" = true ] && [ "$state_changed" = true ]; then
-        show_notification "Epoch is $status" "Port $PORT on $SERVER @ $(date '+%H:%M:%S')"
-    elif [ "$NOTIFICATION_WHEN_DOWN" = true ] && [ "$status" = "DOWN" ]; then
-        show_notification "Epoch is $status" "Port $PORT on $SERVER @ $(date '+%H:%M:%S')"
-    fi
-
-    last_status="$status"
-    sleep "$DELAY_SECONDS"
+    echo "$timestamp auth server:3724 $auth_status"
+    echo "$timestamp kezan server:8085 $game_status"
+    [ "$auth_status" = "alive" ] && [ "$game_status" = "alive" ] && paplay "$SOUND_FILE" >/dev/null 2>&1
+    sleep $DELAY
 done
